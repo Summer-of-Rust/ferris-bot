@@ -14,9 +14,11 @@ use serenity::model::id::GuildId;
 
 use serenity::model::interactions::{Interaction, InteractionResponseType};
 
+use serenity::prelude::Mentionable;
 use serenity::utils::MessageBuilder;
 
 use crate::animal::Animal;
+use crate::question::QuestionTF;
 use crate::sound::Sound;
 
 const QUIZ_STRING: &str = "quiz";
@@ -26,7 +28,7 @@ pub struct Handler;
 impl Handler {
     async fn interaction_create(
         &self,
-        context: Context,
+        ctx: Context,
         interaction: Interaction,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // Get the slash command, or return if it's not a slash command.
@@ -36,12 +38,15 @@ impl Handler {
             return Ok(());
         };
 
-        if let Err(_e) = slash_command.channel_id.to_channel(&context).await {
-            // warn!("Error getting channel: {:?}", e);
+        let channel = match slash_command.channel_id.to_channel(&ctx).await {
+            Ok(channel) => channel,
+            Err(why) => {
+                println!("Error getting channel: {:?}", why);
+                return Ok(());
+            }
         };
 
-        dbg!(&slash_command.data.name[..]);
-
+        // Match the different potential slash commands
         match &slash_command.data.name[..] {
             QUIZ_STRING => {
                 // Get the current number of seconds since the epoch
@@ -50,28 +55,97 @@ impl Handler {
                     .unwrap()
                     .as_secs();
 
+                const QUESTION_TIME: u64 = 3;
+
                 // Load text from file question/q1.rs
                 let mut file = File::open("questions/q1.rs")?;
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)?;
 
+                // Ask the question
                 slash_command
-                    .create_interaction_response(&context.http, |response| {
+                    .create_interaction_response(&ctx.http, |response| {
                         response
                             .kind(InteractionResponseType::ChannelMessageWithSource)
                             .interaction_response_data(|message| {
-                                message.content(
-                                    MessageBuilder::new()
-                                        .push("Does this code compile?")
-                                        .push("```rust\n")
-                                        .push(&contents)
-                                        .push("```")
-                                        .push(format!("Showing answer <t:{}:R>", now + 20))
-                                        .build(),
-                                )
+                                message
+                                    .content(MessageBuilder::new().push("Starting Quiz!").build())
                             })
                     })
                     .await?;
+
+                let m = channel
+                    .id()
+                    .send_message(&ctx, |m| {
+                        m.content(
+                            MessageBuilder::new()
+                                .push("Does this code compile?")
+                                .push("```rust\n")
+                                .push(&contents)
+                                .push("```")
+                                .push(format!("Showing answer <t:{}:R>", now + QUESTION_TIME))
+                                .build(),
+                        )
+                        .components(|c| c.add_action_row(QuestionTF::action_row()))
+                    })
+                    .await
+                    .unwrap();
+
+                // Wait for a responses within a certain amount of time
+                let mut cib = m
+                    .await_component_interactions(&ctx)
+                    .timeout(Duration::from_secs(QUESTION_TIME))
+                    .build();
+
+                let mut correct_answers = Vec::new();
+
+                while let Some(mci) = cib.next().await {
+                    println!("{:?}", mci.data);
+                    let question_choice = QuestionTF::from_str(&mci.data.custom_id).unwrap();
+
+                    let member = mci.member.clone().unwrap();
+
+                    correct_answers.push(member);
+
+                    // Acknowledge the interaction and send a reply
+                    mci.create_interaction_response(&ctx, |r| {
+                        // This time we dont edit the message but reply to it
+                        r.kind(InteractionResponseType::ChannelMessageWithSource)
+                            .interaction_response_data(|d| {
+                                // Make the message hidden for other users by setting `ephemeral(true)`.
+                                d.ephemeral(true)
+                                    .content(format!("You choose {}", question_choice))
+                            })
+                    })
+                    .await
+                    .unwrap();
+                }
+
+                m.delete(&ctx).await.unwrap();
+
+                // Write a message with people who got the question right
+                let m = channel
+                    .id()
+                    .send_message(&ctx, |m| {
+                        let mut builder = MessageBuilder::new();
+
+                        builder.push("The following people got the question right:\n\n");
+
+                        for member in correct_answers {
+                            builder.push(member.mention()).push(" ");
+                        }
+
+                        m.content(
+                            builder
+                                .push("\n\nThe correct answer was:")
+                                .push("```rust\n")
+                                .push(&contents)
+                                .push("```")
+                                .build(),
+                        )
+                    })
+                    .await
+                    .unwrap();
             }
             _ => {
                 // warn!("should not happen");
@@ -109,7 +183,7 @@ impl EventHandler for Handler {
         // Wait for the user to make a selection
         let mci = match m
             .await_component_interaction(&ctx)
-            .timeout(Duration::from_secs(60 * 3))
+            .timeout(Duration::from_secs(10))
             .await
         {
             Some(ci) => ci,

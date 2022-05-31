@@ -8,6 +8,7 @@ use serenity::prelude::*;
 mod animal;
 mod handler;
 mod sound;
+mod question;
 
 #[tokio::main]
 async fn main() {
