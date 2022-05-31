@@ -5,7 +5,7 @@ use std::fmt;
 
 use serenity::{builder::{CreateActionRow, CreateSelectMenu, CreateSelectMenuOption, CreateButton}, model::interactions::message_component::ButtonStyle};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum QuestionTF {
     True,
     False,

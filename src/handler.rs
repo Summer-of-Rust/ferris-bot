@@ -12,6 +12,7 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 
+use serenity::model::interactions::application_command::{ApplicationCommandOptionType, ApplicationCommandInteractionDataOptionValue};
 use serenity::model::interactions::{Interaction, InteractionResponseType};
 
 use serenity::prelude::Mentionable;
@@ -49,6 +50,31 @@ impl Handler {
         // Match the different potential slash commands
         match &slash_command.data.name[..] {
             QUIZ_STRING => {
+                // Get the number of the question
+                let question_number = match slash_command
+                    .data
+                    .options
+                    .get(0)
+                    .expect("Expected int option")
+                    .resolved
+                    .as_ref()
+                    .expect("Expected int object")
+                {
+                    ApplicationCommandInteractionDataOptionValue::Integer(i) => *i,
+                    _ => {
+                        println!("Expected int option");
+                        return Ok(());
+                    }
+                };
+
+                let answers = [
+                    QuestionTF::True,
+                    QuestionTF::False,
+                    QuestionTF::False,
+                ];
+
+                dbg!(question_number);
+
                 // Get the current number of seconds since the epoch
                 let now = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
@@ -58,7 +84,7 @@ impl Handler {
                 const QUESTION_TIME: u64 = 3;
 
                 // Load text from file question/q1.rs
-                let mut file = File::open("questions/q1.rs")?;
+                let mut file = File::open(format!("questions/q{}.rs", question_number))?;
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)?;
 
@@ -105,7 +131,9 @@ impl Handler {
 
                     let member = mci.member.clone().unwrap();
 
-                    correct_answers.push(member);
+                    if question_choice == answers[(question_number - 1) as usize] {
+                        correct_answers.push(member);
+                    }
 
                     // Acknowledge the interaction and send a reply
                     mci.create_interaction_response(&ctx, |r| {
@@ -165,84 +193,22 @@ impl EventHandler for Handler {
         }
     }
 
-    async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content != "animal" {
-            return;
-        }
-
-        // Ask the user for its favorite animal
-        let m = msg
-            .channel_id
-            .send_message(&ctx, |m| {
-                m.content("Please select your favorite animal")
-                    .components(|c| c.add_action_row(Animal::action_row()))
-            })
-            .await
-            .unwrap();
-
-        // Wait for the user to make a selection
-        let mci = match m
-            .await_component_interaction(&ctx)
-            .timeout(Duration::from_secs(10))
-            .await
-        {
-            Some(ci) => ci,
-            None => {
-                m.reply(&ctx, "Timed out").await.unwrap();
-                return;
-            }
-        };
-
-        // data.custom_id contains the id of the component (here "animal_select")
-        // and should be used to identify if a message has multiple components.
-        // data.values contains the selected values from the menu
-        let animal = Animal::from_str(mci.data.values.get(0).unwrap()).unwrap();
-
-        // Acknowledge the interaction and edit the message
-        mci.create_interaction_response(&ctx, |r| {
-            r.kind(InteractionResponseType::UpdateMessage)
-                .interaction_response_data(|d| {
-                    d.content(format!("You chose: **{}**\nNow choose a sound!", animal))
-                        .components(|c| c.add_action_row(Sound::action_row()))
-                })
-        })
-        .await
-        .unwrap();
-
-        // Wait for multiple interactions
-
-        let mut cib = m
-            .await_component_interactions(&ctx)
-            .timeout(Duration::from_secs(60 * 3))
-            .build();
-
-        while let Some(mci) = cib.next().await {
-            let sound = Sound::from_str(&mci.data.custom_id).unwrap();
-            // Acknowledge the interaction and send a reply
-            mci.create_interaction_response(&ctx, |r| {
-                // This time we dont edit the message but reply to it
-                r.kind(InteractionResponseType::ChannelMessageWithSource)
-                    .interaction_response_data(|d| {
-                        // Make the message hidden for other users by setting `ephemeral(true)`.
-                        d.ephemeral(true)
-                            .content(format!("The **{}** says __{}__", animal, sound))
-                    })
-            })
-            .await
-            .unwrap();
-        }
-
-        // Delete the orig message or there will be dangling components
-        m.delete(&ctx).await.unwrap()
-    }
-
     async fn ready(&self, context: Context, ready: Ready) {
         let _name = ready.user.name;
 
         // Create the review command for the Veloren server
         if let Err(_e) = GuildId(345993194322001923)
             .create_application_command(&context.http, |command| {
-                command.name("quiz").description("Start the quiz")
+                command
+                    .name("quiz")
+                    .description("Start the quiz")
+                    .create_option(|option| {
+                        option
+                            .name("id")
+                            .description("The question to ask")
+                            .kind(ApplicationCommandOptionType::Integer)
+                            .required(true)
+                    })
             })
             .await
         {
