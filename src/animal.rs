@@ -1,17 +1,9 @@
 use std::error::Error as StdError;
 use std::str::FromStr;
-use std::time::Duration;
-use std::{env, fmt};
 
-use dotenv::dotenv;
-use serenity::async_trait;
-use serenity::builder::{CreateActionRow, CreateButton, CreateSelectMenu, CreateSelectMenuOption};
-use serenity::client::{Context, EventHandler};
-use serenity::futures::StreamExt;
-use serenity::model::channel::Message;
-use serenity::model::interactions::message_component::ButtonStyle;
-use serenity::model::interactions::InteractionResponseType;
-use serenity::prelude::*;
+use std::fmt;
+
+use serenity::builder::{CreateActionRow, CreateSelectMenu, CreateSelectMenuOption};
 
 #[derive(Debug)]
 pub enum Animal {

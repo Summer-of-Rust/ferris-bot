@@ -1,19 +1,12 @@
-use std::error::Error as StdError;
 use std::str::FromStr;
-use std::time::Duration;
-use std::{env, fmt};
 
-use dotenv::dotenv;
-use serenity::async_trait;
-use serenity::builder::{CreateActionRow, CreateButton, CreateSelectMenu, CreateSelectMenuOption};
-use serenity::client::{Context, EventHandler};
-use serenity::futures::StreamExt;
-use serenity::model::channel::Message;
+use std::fmt;
+
+use serenity::builder::{CreateActionRow, CreateButton};
+
 use serenity::model::interactions::message_component::ButtonStyle;
-use serenity::model::interactions::InteractionResponseType;
-use serenity::prelude::*;
 
-use crate::animal::{ParseComponentError, Animal};
+use crate::animal::{Animal, ParseComponentError};
 
 #[derive(Debug)]
 pub enum Sound {

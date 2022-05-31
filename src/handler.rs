@@ -3,20 +3,17 @@ use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use std::{env, fmt};
 
-use dotenv::dotenv;
 use serenity::async_trait;
-use serenity::builder::{CreateActionRow, CreateButton, CreateSelectMenu, CreateSelectMenuOption};
+
 use serenity::client::{Context, EventHandler};
 use serenity::futures::StreamExt;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
-use serenity::model::interactions::application_command::ApplicationCommandOptionType;
-use serenity::model::interactions::message_component::ButtonStyle;
+
 use serenity::model::interactions::{Interaction, InteractionResponseType};
-use serenity::prelude::*;
+
 use serenity::utils::MessageBuilder;
 
 use crate::animal::Animal;
@@ -39,7 +36,7 @@ impl Handler {
             return Ok(());
         };
 
-        if let Err(e) = slash_command.channel_id.to_channel(&context).await {
+        if let Err(_e) = slash_command.channel_id.to_channel(&context).await {
             // warn!("Error getting channel: {:?}", e);
         };
 
@@ -89,7 +86,7 @@ impl Handler {
 #[async_trait]
 impl EventHandler for Handler {
     async fn interaction_create(&self, context: Context, interaction: Interaction) {
-        if let Err(e) = self.interaction_create(context, interaction).await {
+        if let Err(_e) = self.interaction_create(context, interaction).await {
             // error!(?e, "Error while processing message");
         }
     }
@@ -166,10 +163,10 @@ impl EventHandler for Handler {
     }
 
     async fn ready(&self, context: Context, ready: Ready) {
-        let name = ready.user.name;
+        let _name = ready.user.name;
 
         // Create the review command for the Veloren server
-        if let Err(e) = GuildId(345993194322001923)
+        if let Err(_e) = GuildId(345993194322001923)
             .create_application_command(&context.http, |command| {
                 command.name("quiz").description("Start the quiz")
             })
