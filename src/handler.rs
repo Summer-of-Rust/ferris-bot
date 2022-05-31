@@ -12,15 +12,15 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 
-use serenity::model::interactions::application_command::{ApplicationCommandOptionType, ApplicationCommandInteractionDataOptionValue};
+use serenity::model::interactions::application_command::{
+    ApplicationCommandInteractionDataOptionValue, ApplicationCommandOptionType,
+};
 use serenity::model::interactions::{Interaction, InteractionResponseType};
 
 use serenity::prelude::Mentionable;
 use serenity::utils::MessageBuilder;
 
-use crate::animal::Animal;
 use crate::question::QuestionTF;
-use crate::sound::Sound;
 
 const QUIZ_STRING: &str = "quiz";
 
@@ -67,13 +67,12 @@ impl Handler {
                     }
                 };
 
-                let answers = [
-                    QuestionTF::True,
-                    QuestionTF::False,
-                    QuestionTF::False,
-                ];
+                let answers = [QuestionTF::True, QuestionTF::True, QuestionTF::False];
 
-                dbg!(question_number);
+                if question_number > answers.len() as i64 {
+                    println!("Question number out of bounds");
+                    return Ok(());
+                }
 
                 // Get the current number of seconds since the epoch
                 let now = SystemTime::now()

@@ -5,9 +5,7 @@ use handler::Handler;
 
 use serenity::prelude::*;
 
-mod animal;
 mod handler;
-mod sound;
 mod question;
 
 #[tokio::main]
