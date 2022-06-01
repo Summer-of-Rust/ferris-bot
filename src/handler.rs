@@ -23,6 +23,7 @@ use serenity::utils::MessageBuilder;
 use crate::question::QuestionTF;
 
 const QUIZ_STRING: &str = "quiz";
+const QUESTION_TIME: u64 = 30;
 
 pub struct Handler;
 
@@ -67,7 +68,15 @@ impl Handler {
                     }
                 };
 
-                let answers = [QuestionTF::True, QuestionTF::True, QuestionTF::False];
+                let answers = [
+                    QuestionTF::True,
+                    QuestionTF::True,
+                    QuestionTF::False,
+                    QuestionTF::False,
+                    QuestionTF::True,
+                    QuestionTF::True,
+                    QuestionTF::False,
+                ];
 
                 if question_number > answers.len() as i64 {
                     println!("Question number out of bounds");
@@ -79,8 +88,6 @@ impl Handler {
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_secs();
-
-                const QUESTION_TIME: u64 = 3;
 
                 // Load text from file question/q1.rs
                 let mut file = File::open(format!("questions/q{}.rs", question_number))?;
@@ -165,6 +172,7 @@ impl Handler {
                         m.content(
                             builder
                                 .push("\n\nThe correct answer was:")
+                                .push(answers[(question_number - 1) as usize].to_string())
                                 .push("```rust\n")
                                 .push(&contents)
                                 .push("```")
@@ -196,7 +204,7 @@ impl EventHandler for Handler {
         let _name = ready.user.name;
 
         // Create the review command for the Veloren server
-        if let Err(_e) = GuildId(345993194322001923)
+        if let Err(_e) = GuildId(968184259053518858)
             .create_application_command(&context.http, |command| {
                 command
                     .name("quiz")
