@@ -8,7 +8,7 @@ use serenity::async_trait;
 
 use serenity::client::{Context, EventHandler};
 use serenity::futures::StreamExt;
-use serenity::model::channel::Message;
+
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 
@@ -158,7 +158,7 @@ impl Handler {
                 m.delete(&ctx).await.unwrap();
 
                 // Write a message with people who got the question right
-                let m = channel
+                let _m = channel
                     .id()
                     .send_message(&ctx, |m| {
                         let mut builder = MessageBuilder::new();
