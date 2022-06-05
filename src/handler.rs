@@ -171,7 +171,7 @@ impl Handler {
 
                         m.content(
                             builder
-                                .push("\n\nThe correct answer was:")
+                                .push("\n\nThe correct answer was: ")
                                 .push(answers[(question_number - 1) as usize].to_string())
                                 .push("```rust\n")
                                 .push(&contents)
