@@ -1,18 +1,22 @@
 use crate::model::runnable::*;
 use crate::Error;
-use serenity::utils::MessageBuilder;
 use serenity::prelude::Mentionable;
+
 use std::io::ErrorKind;
 
 /// Given some stdout or stderr data, format it so that it can be rendered by discord
 fn format_output(response: String, syntax_highlight: Option<&str>) -> String {
     if response.len() < 1000 {
         // Response falls within size constraints
-        return format!("```{}\n{}\n```", syntax_highlight.unwrap_or(""),response);
+        return format!("```{}\n{}\n```", syntax_highlight.unwrap_or(""), response);
     } else {
         // For UX, truncate components to 1000 chars... should be long enough
         let short_repsonse = &response[0..1000];
-        return format!("```{}\n{}[TRUNCATED]```", syntax_highlight.unwrap_or(""), short_repsonse);
+        return format!(
+            "```{}\n{}[TRUNCATED]```",
+            syntax_highlight.unwrap_or(""),
+            short_repsonse
+        );
     }
 }
 
@@ -20,7 +24,7 @@ async fn reply(
     ctx: poise::ApplicationContext<'_, crate::Data, crate::Error>,
     code: String,
     stdout: Option<String>,
-    stderr: Option<String>
+    stderr: Option<String>,
 ) -> Result<(), Error> {
     let interaction = ctx.interaction.unwrap();
     let channel = match interaction.channel_id.to_channel(&ctx.discord.http).await {
@@ -33,8 +37,7 @@ async fn reply(
     let member = interaction.member.clone().unwrap();
 
     // TODO: probably a nicer way to do this
-    let mut fields = Vec::new();
-    fields.push(("Code", format_output(code, Some("rs")), true));
+    let mut fields = vec![("Code", format_output(code, Some("rs")), true)];
 
     // If stdout is present, add it to the fields
     if let Some(stdout) = stdout {
@@ -146,7 +149,7 @@ pub async fn run(
                         ctx,
                         format_output(raw_code, Some("rs")),
                         None,
-                        Some("Your program took too long to run.".to_owned())
+                        Some("Your program took too long to run.".to_owned()),
                     )
                     .await?;
                 }
