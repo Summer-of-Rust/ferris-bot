@@ -43,7 +43,7 @@ async fn reply(
     if let Some(stdout) = stdout {
         // Ensure that the stdout is not empty
         if !stdout.is_empty() {
-            fields.push(("Output", format_output(stdout, None), true));
+            fields.push(("Output", format_output(stdout, None), false));
         }
     }
 
@@ -51,7 +51,7 @@ async fn reply(
     if let Some(stderr) = stderr {
         // Ensure stderr is not empty
         if !stderr.is_empty() {
-            fields.push(("Error", format_output(stderr, None), true));
+            fields.push(("Error", format_output(stderr, None), false));
         }
     }
 
