@@ -1,4 +1,3 @@
-
 use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
@@ -6,17 +5,17 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serenity::futures::StreamExt;
 
-use serenity::model::interactions::{InteractionResponseType};
+use serenity::model::interactions::InteractionResponseType;
 
 use serenity::prelude::Mentionable;
 use serenity::utils::MessageBuilder;
 
-use crate::question::QuestionTF;
-use crate::{Error};
+use crate::model::question::QuestionTF;
+use crate::Error;
 
 const QUESTION_TIME: u64 = 30;
 
-/// Dummy command to test slash command choice parameters
+/// Starts a quiz
 #[poise::command(slash_command)]
 pub async fn quiz(
     ctx: poise::ApplicationContext<'_, crate::Data, crate::Error>,

@@ -2,31 +2,15 @@ use dotenv::dotenv;
 use poise::serenity_prelude as serenity;
 
 mod commands;
-use crate::commands::quiz;
-
-mod question;
+mod configuration;
+mod model;
+use crate::commands::{quiz, run};
+use crate::model::container::{get_container_settings, ContainerActions};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 // User data, which is stored and accessible in all command invocations
 pub struct Data {}
-
-#[derive(Debug, poise::Modal)]
-#[allow(dead_code)] // fields only used for Debug print
-struct MyModal {
-    first_input: String,
-    #[paragraph]
-    second_input: Option<String>,
-}
-#[poise::command(slash_command)]
-async fn modal(ctx: poise::ApplicationContext<'_, crate::Data, crate::Error>) -> Result<(), Error> {
-    use poise::Modal as _;
-
-    let data = MyModal::execute(ctx).await?;
-    println!("Got data: {:?}", data);
-
-    Ok(())
-}
 
 /// Registers or unregisters application commands in this guild or globally
 #[poise::command(prefix_command, hide_in_help)]
@@ -39,18 +23,21 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+
+    // Before anything, pull the latest container image for running rust code
+    // We will use RustBot's runner image for this
+    // https://github.com/TheConner/RustBot/pkgs/container/rustbot-runner
+    if let Err(e) = get_container_settings().pull_image() {
+        println!("Error pulling image: {:?}", e);
+    };
+
+    println!("Starting up...");
     let framework = poise::Framework::build()
         .options(poise::FrameworkOptions {
-            commands: vec![register(), modal(), quiz::quiz()],
+            commands: vec![register(), quiz::quiz(), run::run()],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("!".into()),
                 ..Default::default()
-            },
-            listener: |_ctx, event, _framework, _data| {
-                Box::pin(async move {
-                    println!("Got an event in listener: {:?}", event.name());
-                    Ok(())
-                })
             },
             ..Default::default()
         })
