@@ -147,7 +147,7 @@ pub async fn run(
                     //msg.react(&ctx, CLOCK_EMOJI).await?;
                     reply(
                         ctx,
-                        format_output(raw_code, Some("rs")),
+                        raw_code,
                         None,
                         Some("Your program took too long to run.".to_owned()),
                     )
