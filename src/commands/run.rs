@@ -1,8 +1,7 @@
 use crate::model::runnable::*;
 use crate::Error;
-
-
 use serenity::utils::MessageBuilder;
+use std::io::ErrorKind;
 
 /// Given some stdout or stderr data, format it so that it can be rendered by discord
 fn format_output(response: String) -> String {
@@ -142,7 +141,7 @@ pub async fn run(
             // TODO: find out ways this can blow up
             //println!("TIMEOUT on {}'s code", interaction.);
             match error.kind() {
-                _timed_out => {
+                ErrorKind::TimedOut => {
                     // Took too long to run, complain to user
                     //msg.react(&ctx, CROSS_MARK_EMOJI).await?;
                     //msg.react(&ctx, CLOCK_EMOJI).await?;
@@ -152,6 +151,9 @@ pub async fn run(
                         "Your program took too long to run.".to_owned(),
                     )
                     .await?;
+                }
+                _ => {
+                    println!("Error: {:?}", error);
                 }
             }
         }

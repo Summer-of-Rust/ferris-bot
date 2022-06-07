@@ -1,12 +1,8 @@
 use crate::configuration;
 use crate::model::configurable::ConfigurableValue;
-
-
 use std::io;
 use std::io::Error;
-use std::process::Command;
-use std::process::Stdio;
-
+use std::process::{Command, Stdio};
 
 /// Settings for our container
 #[derive(Clone)]
