@@ -1,32 +1,51 @@
-use std::env;
-
 use dotenv::dotenv;
-use handler::Handler;
+use poise::serenity_prelude as serenity;
 
-use serenity::prelude::*;
+mod commands;
+mod configuration;
+mod model;
+use crate::commands::{quiz, run};
+use crate::model::container::{get_container_settings, ContainerActions};
 
-mod handler;
-mod question;
+pub type Error = Box<dyn std::error::Error + Send + Sync>;
+pub type Context<'a> = poise::Context<'a, Data, Error>;
+// User data, which is stored and accessible in all command invocations
+pub struct Data {}
+
+/// Registers or unregisters application commands in this guild or globally
+#[poise::command(prefix_command, hide_in_help)]
+async fn register(ctx: Context<'_>) -> Result<(), Error> {
+    poise::builtins::register_application_commands_buttons(ctx).await?;
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    // Configure the client with your Discord bot token in the environment.
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
-    // Build our client.
-    let intents = GatewayIntents::GUILD_MESSAGES
-        | GatewayIntents::DIRECT_MESSAGES
-        | GatewayIntents::MESSAGE_CONTENT;
-    let mut client = Client::builder(token, intents)
-        .event_handler(Handler)
-        .await
-        .expect("Error creating client");
+    // Before anything, pull the latest container image for running rust code
+    // We will use RustBot's runner image for this
+    // https://github.com/TheConner/RustBot/pkgs/container/rustbot-runner
+    if let Err(e) = get_container_settings().pull_image() {
+        println!("Error pulling image: {:?}", e);
+    };
 
-    // Finally, start a single shard, and start listening to events.
-    // Shards will automatically attempt to reconnect, and will perform
-    // exponential backoff until it reconnects.
-    if let Err(why) = client.start().await {
-        println!("Client error: {:?}", why);
-    }
+    println!("Starting up...");
+    let framework = poise::Framework::build()
+        .options(poise::FrameworkOptions {
+            commands: vec![register(), quiz::quiz(), run::run()],
+            prefix_options: poise::PrefixFrameworkOptions {
+                prefix: Some("!".into()),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .token(std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN"))
+        .intents(
+            serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
+        )
+        .user_data_setup(move |_ctx, _ready, _framework| Box::pin(async move { Ok(Data {}) }));
+
+    framework.run().await.unwrap();
 }
