@@ -1,24 +1,26 @@
 use crate::model::runnable::*;
 use crate::Error;
 use serenity::utils::MessageBuilder;
+use serenity::prelude::Mentionable;
 use std::io::ErrorKind;
 
 /// Given some stdout or stderr data, format it so that it can be rendered by discord
-fn format_output(response: String) -> String {
-    if response.len() < 1990 {
+fn format_output(response: String, syntax_highlight: Option<&str>) -> String {
+    if response.len() < 1000 {
         // Response falls within size constraints
-        return format!("```\n{}\n```", response);
+        return format!("```{}\n{}\n```", syntax_highlight.unwrap_or(""),response);
     } else {
-        // we trim to 1981 chars because [TRIMMED] is 9 chars
-        let short_repsonse = &response[0..1981]; // TODO: maybe do this in place with a mutable string
-        return format!("```{}[TRIMMED]```", short_repsonse);
+        // For UX, truncate components to 1000 chars... should be long enough
+        let short_repsonse = &response[0..1000];
+        return format!("```{}\n{}[TRUNCATED]```", syntax_highlight.unwrap_or(""), short_repsonse);
     }
 }
 
 async fn reply(
     ctx: poise::ApplicationContext<'_, crate::Data, crate::Error>,
     code: String,
-    reply_text: String,
+    stdout: Option<String>,
+    stderr: Option<String>
 ) -> Result<(), Error> {
     let interaction = ctx.interaction.unwrap();
     let channel = match interaction.channel_id.to_channel(&ctx.discord.http).await {
@@ -28,19 +30,36 @@ async fn reply(
             return Ok(());
         }
     };
+    let member = interaction.member.clone().unwrap();
+
+    // TODO: probably a nicer way to do this
+    let mut fields = Vec::new();
+    fields.push(("Code", format_output(code, Some("rs")), true));
+
+    // If stdout is present, add it to the fields
+    if let Some(stdout) = stdout {
+        // Ensure that the stdout is not empty
+        if !stdout.is_empty() {
+            fields.push(("Output", format_output(stdout, None), true));
+        }
+    }
+
+    // If stderr is present, add it to the fields
+    if let Some(stderr) = stderr {
+        // Ensure stderr is not empty
+        if !stderr.is_empty() {
+            fields.push(("Error", format_output(stderr, None), true));
+        }
+    }
 
     channel
         .id()
         .send_message(&ctx.discord.http, |m| {
-            m.content(
-                MessageBuilder::new()
-                    .mention(&interaction.member.clone().unwrap())
-                    .push("Ran")
-                    .push(code)
-                    .push("Output")
-                    .push(reply_text)
-                    .build(),
-            )
+            m.content(format!("{} ran", member.mention()));
+            m.embed(|e| {
+                e.fields(fields);
+                e
+            })
         })
         .await?;
     Ok(())
@@ -113,29 +132,7 @@ pub async fn run(
             // or timeouts. With discord's command framework, it's a little more tricky.
             // For now we just use a canned response for everything, in the future it would be nice to add more
             // detailed responses for each type of response.
-
-            // Check to see if the response was nothing
-            if !stdout.is_empty() && stderr.is_empty() {
-                println!("Response: has stdout, no stderr");
-                //msg.react(&ctx, CHECK_MARK_EMOJI).await?;
-                //msg.reply(&ctx, format_output(stdout)).await?;
-                reply(ctx, format_output(raw_code), format_output(stdout)).await?;
-            } else if stdout.is_empty() && !stderr.is_empty() {
-                println!("Response: no stdout, has stderr");
-                // Had stderr, no stdout
-                //msg.react(&ctx, CROSS_MARK_EMOJI).await?;
-                //msg.reply(&ctx, format_output(stderr)).await?;
-                reply(ctx, format_output(raw_code), format_output(stderr)).await?;
-            } else {
-                println!("Response: no stdout, no stderr");
-                //msg.react(&ctx, CHECK_MARK_EMOJI).await?;
-                reply(
-                    ctx,
-                    format_output(raw_code),
-                    "Your program had no output to STDOUT or STDERR".to_owned(),
-                )
-                .await?;
-            }
+            reply(ctx, raw_code, Some(stdout), Some(stderr)).await?;
         }
         Err(error) => {
             // TODO: find out ways this can blow up
@@ -147,8 +144,9 @@ pub async fn run(
                     //msg.react(&ctx, CLOCK_EMOJI).await?;
                     reply(
                         ctx,
-                        format_output(raw_code),
-                        "Your program took too long to run.".to_owned(),
+                        format_output(raw_code, Some("rs")),
+                        None,
+                        Some("Your program took too long to run.".to_owned())
                     )
                     .await?;
                 }

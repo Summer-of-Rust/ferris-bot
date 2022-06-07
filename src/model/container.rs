@@ -63,7 +63,7 @@ impl ContainerActions for ContainerSettings {
             command
         );
 
-        println!("{}", container_command);
+        //println!("{}", container_command);
 
         // Because std::command does not give me the ability to override / modify
         // how arguments are escaped I have to do some stupid hack to make this

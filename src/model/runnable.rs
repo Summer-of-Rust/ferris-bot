@@ -36,7 +36,7 @@ impl Runnable for String {
         // Next, we have to build the command that invokes the trampoline inside the container
         let container_command = format!("trampoline {}", encoded_program);
 
-        println!("{}", container_command);
+        //println!("{}", container_command);
 
         // Because std::command does not give me the ability to override / modify
         // how arguments are escaped I have to do some stupid hack to make this
