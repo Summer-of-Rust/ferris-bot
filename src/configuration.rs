@@ -36,7 +36,7 @@ pub const CONTAINER_MAX_RUNTIME: &ConfigurableItem<u64> = &ConfigurableItem {
 /// Tells the bot if it's running in a container this will influence flags it
 /// chooses for child containers available values: false,true
 pub const IS_RUNNING_IN_CONTAINER: &ConfigurableItem<bool> = &ConfigurableItem {
-    environment_variable: "CONTAINER_SWAP",
+    environment_variable: "IS_RUNNING_IN_CONTAINER",
     default_value: false,
 };
 
