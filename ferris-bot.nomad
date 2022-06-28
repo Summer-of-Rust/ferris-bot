@@ -29,8 +29,9 @@ job "ferris-bot" {
         image = "ghcr.io/summer-of-rust/ferris-bot/ferris-bot-rust:latest "
         # This should be updated depending on nomad deployment
         volumes = [
-          "/run/user/1000/podman/podman.sock:/run/user/1000/podman/podman.sock"
+          "run/user/1000/podman/podman.sock:/run/podman/podman.sock"
         ]
+        user = "ferris"
       }
       
       template {

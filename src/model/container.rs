@@ -13,7 +13,7 @@ pub struct ContainerSettings {
     pub image: String,
     pub max_runtime: u64,
     pub network: String,
-    pub pid_limit: u64
+    pub pid_limit: u64,
 }
 
 pub trait ContainerActions {
@@ -74,7 +74,7 @@ impl ContainerActions for ContainerSettings {
             command
         );
 
-         println!("{}", container_command);
+        println!("{}", container_command);
 
         // Because std::command does not give me the ability to override / modify
         // how arguments are escaped I have to do some stupid hack to make this
@@ -110,6 +110,6 @@ pub fn get_container_settings() -> ContainerSettings {
         swap: (*configuration::CONTAINER_SWAP).value(),
         max_runtime: (*configuration::CONTAINER_MAX_RUNTIME).value(),
         network: (*configuration::CONTAINER_NETWORK).value(),
-        pid_limit: (*configuration::CONTAINER_PIDS).value()
+        pid_limit: (*configuration::CONTAINER_PIDS).value(),
     }
 }

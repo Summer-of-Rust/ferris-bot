@@ -1,5 +1,3 @@
-use base64::Config;
-
 use crate::model::configurable::*;
 
 /// Sets the container image to pull
@@ -51,5 +49,5 @@ pub const CONTAINER_NETWORK: &ConfigurableItem<&str> = &ConfigurableItem {
 // Maximum amount of PIDs available to a container
 pub const CONTAINER_PIDS: &ConfigurableItem<u64> = &ConfigurableItem {
     environment_variable: "MAX_PIDS",
-    default_value: 64
+    default_value: 64,
 };
