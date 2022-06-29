@@ -18,8 +18,8 @@ pub const CONTAINER_MEMORY: &ConfigurableItem<&str> = &ConfigurableItem {
     default_value: "100m",
 };
 
-// TODO: add settings for CPU scheduler
-// although, i'm unsure if podman supports userspace containers with different schedulers
+// TODO: add settings for CPU scheduler although, i'm unsure if podman supports
+// userspace containers with different schedulers
 
 /// Sets the maximum amount of swap usable to the child container
 pub const CONTAINER_SWAP: &ConfigurableItem<&str> = &ConfigurableItem {
@@ -33,10 +33,15 @@ pub const CONTAINER_MAX_RUNTIME: &ConfigurableItem<u64> = &ConfigurableItem {
     default_value: 5000,
 };
 
-// Tells the bot if it's running in a container
-// this will influence flags it chooses for child containers
-// available values: false,true
+/// Tells the bot if it's running in a container this will influence flags it
+/// chooses for child containers available values: false,true
 pub const IS_RUNNING_IN_CONTAINER: &ConfigurableItem<bool> = &ConfigurableItem {
-    environment_variable: "CONTAINER_SWAP",
+    environment_variable: "IS_RUNNING_IN_CONTAINER",
     default_value: false,
+};
+
+// Specifies whether the container should have networking
+pub const CONTAINER_NETWORK: &ConfigurableItem<&str> = &ConfigurableItem {
+    environment_variable: "CONTAINER_NETWORK",
+    default_value: "none",
 };

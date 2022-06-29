@@ -12,6 +12,7 @@ pub struct ContainerSettings {
     pub swap: String,
     pub image: String,
     pub max_runtime: u64,
+    pub network: String,
 }
 
 pub trait ContainerActions {
@@ -31,7 +32,10 @@ impl ContainerActions for ContainerSettings {
         if is_container {
             String::from("")
         } else {
-            format!("--cpus={} --memory={}", self.cpu, self.memory)
+            format!(
+                "--cpus={} --memory={} --network={}",
+                self.cpu, self.memory, self.network
+            )
         }
     }
 
@@ -98,5 +102,6 @@ pub fn get_container_settings() -> ContainerSettings {
         memory: (*configuration::CONTAINER_MEMORY).value(),
         swap: (*configuration::CONTAINER_SWAP).value(),
         max_runtime: (*configuration::CONTAINER_MAX_RUNTIME).value(),
+        network: (*configuration::CONTAINER_NETWORK).value(),
     }
 }
